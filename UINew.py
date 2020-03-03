@@ -36,8 +36,18 @@ class PlotThread(QtCore.QThread):
     update_text3 = QtCore.pyqtSignal(str)
 
     update_stat = QtCore.pyqtSignal(str)
-    update_stat1 = QtCore.pyqtSignal(bool)
-    update_stat2 = QtCore.pyqtSignal(bool)
+
+    update_stat1_1 = QtCore.pyqtSignal(bool)
+    update_stat1_2 = QtCore.pyqtSignal(bool)
+
+    update_stat2_1 = QtCore.pyqtSignal(bool)
+    update_stat2_1 = QtCore.pyqtSignal(bool)
+
+    update_stat2_1 = QtCore.pyqtSignal(bool)
+    update_stat2_2 = QtCore.pyqtSignal(bool)
+
+    update_stat3_1 = QtCore.pyqtSignal(bool)
+    update_stat3_2 = QtCore.pyqtSignal(bool)
 
     def __init__(self, parent=None):
         QtCore.QThread.__init__(self, parent=parent)
@@ -46,33 +56,56 @@ class PlotThread(QtCore.QThread):
     def run(self):
         self.sensor = pd.read_excel("C:\\Users\\BLACK\\Desktop\\numpy.xlsx")
         self.xval = self.sensor['time'].tolist()
+
         self.yval1 = self.sensor['arus'].tolist()
         self.yval2 = self.sensor['kecepatan'].tolist()
         self.yval3 = self.sensor['posisi'].tolist()
-        self.yval4 = self.sensor['stat2'].tolist()
+
+        self.stat1 = self.sensor['stat1'].tolist()
+        self.stat2 = self.sensor['stat2'].tolist()
+        self.stat3 = self.sensor['stat3'].tolist()
         
         window_size=50
         idx=0
 
         while self.isRunning and (idx + window_size) < len(self.xval):
 
+            #setup update data sensor 1
             self.update_range1.emit(self.xval[idx],self.xval[idx+window_size])
             self.update_yval1.emit(self.xval[idx:idx+window_size], self.yval1[idx:idx+window_size])
             self.update_text1.emit(str(round(self.yval1[idx+window_size],4)))
             
-            # self.update_stat.emit(str(self.yval4[idx+window_size]))
-            if str(self.yval4[idx+window_size]) == "True" :
-                self.update_stat1.emit(bool(True))
+            #setup update decision status sensor 1
+            if str(self.stat1[idx+window_size]) == "True" :
+                self.update_stat1_1.emit(bool(True))
             else :
-                self.update_stat2.emit(bool(True))
-                        
+                self.update_stat1_2.emit(bool(True))
+
+            #setup update data sensor 2
             self.update_range2.emit(self.xval[idx],self.xval[idx+window_size])
             self.update_yval2.emit(self.xval[idx:idx+window_size], self.yval2[idx:idx+window_size])
             self.update_text2.emit(str(round(self.yval2[idx+window_size],4)))
+
+            #setup update decision status sensor 2
+            if str(self.stat2[idx+window_size]) == "True" :
+                self.update_stat2_1.emit(bool(True))
+            else :
+                self.update_stat2_2.emit(bool(True))
             
+            #setup update data sensor 3
             self.update_range3.emit(self.xval[idx],self.xval[idx+window_size])
             self.update_yval3.emit(self.xval[idx:idx+window_size], self.yval3[idx:idx+window_size])
             self.update_text3.emit(str(round(self.yval3[idx+window_size],4)))
+
+            #self.update_stat.emit(str(self.stat3[idx+window_size]))
+            #print(self.stat3[idx+window_size])
+
+            #setup decision status sensor 3
+            
+            if str(self.stat3[idx+window_size]) == "True" :
+                self.update_stat3_1.emit(bool(True))
+            else :
+                self.update_stat3_2.emit(bool(True))
 
             idx += 1
             time.sleep(1)
@@ -441,6 +474,8 @@ class Ui_MainWindow(object):
         self.menuFile.setObjectName("menuFile")
         self.menuEdit = QtWidgets.QMenu(self.menubar)
         self.menuEdit.setObjectName("menuEdit")
+        self.menuAbout = QtWidgets.QMenu(self.menubar)
+        self.menuAbout.setObjectName("menuAbout")
 
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
@@ -456,14 +491,22 @@ class Ui_MainWindow(object):
         self.actionCopy = QtWidgets.QAction(MainWindow)
         self.actionCopy.setObjectName("actionCopy")
 
+        self.actionAbout = QtWidgets.QAction(MainWindow)
+        self.actionAbout.setObjectName("actionAbout")
+
         self.menuFile.addSeparator()
         self.menuFile.addAction(self.actionNew)
         self.menuFile.addAction(self.actionSave)
         self.menuFile.addAction(self.actionPrint)
+
         self.menuEdit.addAction(self.actionCopy)
+
+        self.menuAbout.addAction(self.actionAbout)
 
         self.menubar.addAction(self.menuFile.menuAction())
         self.menubar.addAction(self.menuEdit.menuAction())
+
+        self.menubar.addAction(self.menuAbout.menuAction())
 
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
@@ -495,6 +538,7 @@ class Ui_MainWindow(object):
 
         self.menuFile.setTitle(_translate("MainWindow", "File"))
         self.menuEdit.setTitle(_translate("MainWindow", "Edit"))
+        self.menuAbout.setTitle(_translate("MainWindow", "About"))
 
         self.actionNew.setText(_translate("MainWindow", "New"))
         self.actionNew.setShortcut(_translate("MainWindow", "Ctrl+N"))
@@ -508,6 +552,9 @@ class Ui_MainWindow(object):
         self.actionCopy.setText(_translate("MainWindow", "Copy"))
         self.actionCopy.setShortcut(_translate("MainWindow", "Ctrl+C"))
 
+        self.actionAbout.setText(_translate("MainWindow", "About"))
+
+
     def startThread(self):
         
         #self.thr = threading.Thread(target=self.update)
@@ -516,16 +563,22 @@ class Ui_MainWindow(object):
         self.th.update_yval1.connect(self.graphicsView_1.plot)
         self.th.update_text1.connect(self.present_yval1.setText)
 
-        self.th.update_stat1.connect(self.Normal_1.setChecked)
-        self.th.update_stat2.connect(self.Fault_1.setChecked)
+        self.th.update_stat1_1.connect(self.Normal_1.setChecked)
+        self.th.update_stat1_2.connect(self.Fault_1.setChecked)
         
         self.th.update_range2.connect(self.graphicsView_2.setXRange)
         self.th.update_yval2.connect(self.graphicsView_2.plot)
         self.th.update_text2.connect(self.present_yval2.setText)
 
+        self.th.update_stat2_1.connect(self.Normal_2.setChecked)
+        self.th.update_stat2_2.connect(self.Fault_2.setChecked)
+
         self.th.update_range3.connect(self.graphicsView_3.setXRange)
         self.th.update_yval3.connect(self.graphicsView_3.plot)
         self.th.update_text3.connect(self.present_yval3.setText)
+
+        self.th.update_stat3_1.connect(self.Normal_3.setChecked)
+        self.th.update_stat3_2.connect(self.Fault_3.setChecked)
 
         self.th.start()
         #self.thr.start()
