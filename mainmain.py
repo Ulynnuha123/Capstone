@@ -21,5 +21,5 @@ while True:
     print('Publishing {0} '.format(kappa))
     time.sleep(1)
     
-    value=aio.receive(micron_feed.key,format())
+    value=aio.receive(micron_feed.key).value
     print(value)
