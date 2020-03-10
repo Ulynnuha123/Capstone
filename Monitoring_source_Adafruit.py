@@ -11,7 +11,6 @@ import os
 
 import pandas as pd
 import pyqtgraph as pg
-import numpy as np
 import time
 import sys
 from PyQt5.QtGui import QPixmap
@@ -20,26 +19,43 @@ import source
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
+
 pg.setConfigOption('background','w')
-pg.setConfigOption('foreground','r')
+pg.setConfigOption('foreground','k')
 
 class DataThread(QtCore.QThread):
+    #setup signal Thread
 
+    #setup range plot Thread
     update_range = QtCore.pyqtSignal(int,int)
 
+    #setup plot Thread
     update_plot1 = QtCore.pyqtSignal(list,list)
     update_plot2 = QtCore.pyqtSignal(list,list)
     update_plot3 = QtCore.pyqtSignal(list,list)
 
+    #setup present value Thread
     update_text1 = QtCore.pyqtSignal(str)
     update_text2 = QtCore.pyqtSignal(str)
     update_text3 = QtCore.pyqtSignal(str)
+
+    #setup stat Thread
+    update_stat1_1 = QtCore.pyqtSignal(bool)
+    update_stat1_2 = QtCore.pyqtSignal(bool)
+
+    update_stat2_1 = QtCore.pyqtSignal(bool)
+    update_stat2_2 = QtCore.pyqtSignal(bool)
+
+    update_stat3_1 = QtCore.pyqtSignal(bool)
+    update_stat3_2 = QtCore.pyqtSignal(bool)
 
     def __init__(self, parent=None):
         QtCore.QThread.__init__(self, parent=parent)
         self.isRunning = True     
 
     def run(self):
+        #setup Adaffruit IO KEY and IO Username
+
         ADAFRUIT_IO_KEY = '403d235a5abb43bc8f72041a8e524d52'
         #ADAFRUIT_IO_KEY = 'aio_ZWbI31fl9XVSloQe6WIX5paCVbTs'
 
@@ -48,18 +64,24 @@ class DataThread(QtCore.QThread):
 
         aio = Client (ADAFRUIT_IO_USERNAME, ADAFRUIT_IO_KEY)
 
+        # Calling Feeds from Adafruit.io
+
         micron_feed1=aio.feeds('temperature')
         micron_feed2=aio.feeds('humidity')
         micron_feed3=aio.feeds('air-pressure')
 
+        #sizing window range and counter index
         window_size=4
         idx=0
 
+        #provide place for data
         self.yval1=[]
         self.yval2=[]
         self.yval3=[]
 
         self.xval=[]
+
+        #setting emit signal from data adafruit
 
         while True:
             
@@ -86,15 +108,27 @@ class DataThread(QtCore.QThread):
 
                 self.update_plot1.emit(self.xval[0:idx+1],self.yval1[0:idx+1])
                 self.update_text1.emit(str(round(self.yval1[idx],4)))
+                if (self.yval1[idx]) <= 5 :
+                    self.update_stat1_1.emit(bool(True))
+                else :
+                    self.update_stat1_2.emit(bool(True))
+
 
                 self.update_plot2.emit(self.xval[0:idx+1],self.yval2[0:idx+1])
                 self.update_text2.emit(str(round(self.yval2[idx],4)))
+                if (self.yval2[idx]) <= 5 :
+                    self.update_stat2_1.emit(bool(True))
+                else :
+                    self.update_stat2_2.emit(bool(True))
 
                 self.update_plot3.emit(self.xval[0:idx+1],self.yval3[0:idx+1])
                 self.update_text3.emit(str(round(self.yval3[idx],4)))
-
+                if (self.yval3[idx]) <= 5 :
+                    self.update_stat3_1.emit(bool(True))
+                else :
+                    self.update_stat3_2.emit(bool(True))
+                
                 print('x,y= ({0},{1})'.format(self.xval[0:idx+1],self.yval1[0:idx+1]))
-                # print('count = {0}'.format(idx))
 
             elif idx > window_size: 
                 
@@ -118,12 +152,26 @@ class DataThread(QtCore.QThread):
                 self.update_range.emit(self.xval[0],self.xval[window_size])
 
                 self.update_plot1.emit(self.xval[0:window_size+1],self.yval1[0:window_size+1])
-                self.update_plot2.emit(self.xval[0:window_size+1],self.yval2[0:window_size+1])
-                self.update_plot3.emit(self.xval[0:window_size+1],self.yval3[0:window_size+1])
-                
                 self.update_text1.emit(str(round(self.yval1[-1],4)))
+                if (self.yval1[window_size]) <= 5 :
+                    self.update_stat1_1.emit(bool(True))
+                else :
+                    self.update_stat1_2.emit(bool(True))
+                
+                self.update_plot2.emit(self.xval[0:window_size+1],self.yval2[0:window_size+1])
                 self.update_text2.emit(str(round(self.yval2[-1],4)))
+                if (self.yval2[window_size]) <= 5 :
+                    self.update_stat2_1.emit(bool(True))
+                else :
+                    self.update_stat2_2.emit(bool(True))
+
+                self.update_plot3.emit(self.xval[0:window_size+1],self.yval3[0:window_size+1])
                 self.update_text3.emit(str(round(self.yval3[-1],4)))
+                if (self.yval3[window_size]) <= 5 :
+                    self.update_stat2_1.emit(bool(True))
+                else :
+                    self.update_stat2_2.emit(bool(True))
+
                 
                 print('x,y= ({0},{1})'.format(self.xval[0:window_size+1],self.yval1[0:window_size+1]))
                 # print('idx = {0}'.format(idx))
@@ -262,7 +310,6 @@ class Ui_MainWindow(object):
         #Setup Radio Button Sensor 1 & Positioning in grid
         self.Normal_1 = QtWidgets.QRadioButton(self.frame_group1)
         self.Normal_1.setObjectName("Normal_1")
-        self.Normal_1.setChecked(True)
         self.gridLayout_2.addWidget(self.Normal_1, 4, 0, 1, 1)
 
         self.Fault_1 = QtWidgets.QRadioButton(self.frame_group1)
@@ -561,62 +608,32 @@ class Ui_MainWindow(object):
         self.actionCopy.setShortcut(_translate("MainWindow", "Ctrl+C"))
 
         self.actionAbout.setText(_translate("MainWindow", "About"))
-        _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MICRON"))
-        self.Title_Label.setText(_translate("MainWindow", "Monitoring Sensor"))
-        
-        self.Normal_1.setText(_translate("MainWindow", "Normal"))
-        self.Fault_1.setText(_translate("MainWindow", "Fault"))
-
-        self.Normal_2.setText(_translate("MainWindow", "Normal"))
-        self.Fault_2.setText(_translate("MainWindow", "Fault"))
-        
-        self.Normal_3.setText(_translate("MainWindow", "Normal"))
-        self.Fault_3.setText(_translate("MainWindow", "Fault"))
-
-        self.Sensor1_label.setText(_translate("MainWindow", "Kecepatan"))
-        self.Sensor2_label.setText(_translate("MainWindow", "Posisi"))
-        self.Sensor3_label.setText(_translate("MainWindow", "Arus"))
-        
-        self.unit_1.setText(_translate("MainWindow", "rpm"))
-        self.unit_2.setText(_translate("MainWindow", "rad"))
-        self.unit_3.setText(_translate("MainWindow", "Amp"))
-
-        self.menuFile.setTitle(_translate("MainWindow", "File"))
-        self.menuEdit.setTitle(_translate("MainWindow", "Edit"))
-        self.menuAbout.setTitle(_translate("MainWindow", "About"))
-
-        self.actionNew.setText(_translate("MainWindow", "New"))
-        self.actionNew.setShortcut(_translate("MainWindow", "Ctrl+N"))
-
-        self.actionSave.setText(_translate("MainWindow", "Save"))
-        self.actionSave.setShortcut(_translate("MainWindow", "Ctrl+S"))
-
-        self.actionPrint.setText(_translate("MainWindow", "Print"))
-        self.actionPrint.setShortcut(_translate("MainWindow", "Ctrl+P"))
-
-        self.actionCopy.setText(_translate("MainWindow", "Copy"))
-        self.actionCopy.setShortcut(_translate("MainWindow", "Ctrl+C"))
-
-        self.actionAbout.setText(_translate("MainWindow", "About"))
 
     def startThread(self):
         
         #self.thr = threading.Thread(target=self.update)
         
         self.th = DataThread()
-
         self.th.update_range.connect(self.graphicsView_1.setXRange)
         self.th.update_plot1.connect(self.graphicsView_1.plot)
         self.th.update_text1.connect(self.present_yval1.setText)
+
+        self.th.update_stat1_1.connect(self.Normal_1.setChecked)
+        self.th.update_stat1_2.connect(self.Fault_1.setChecked)
         
         self.th.update_range.connect(self.graphicsView_2.setXRange)
         self.th.update_plot2.connect(self.graphicsView_2.plot)
         self.th.update_text2.connect(self.present_yval2.setText)
 
+        self.th.update_stat2_1.connect(self.Normal_2.setChecked)
+        self.th.update_stat2_2.connect(self.Fault_2.setChecked)
+
         self.th.update_range.connect(self.graphicsView_3.setXRange)
         self.th.update_plot3.connect(self.graphicsView_3.plot)
         self.th.update_text3.connect(self.present_yval3.setText)
+
+        self.th.update_stat3_1.connect(self.Normal_3.setChecked)
+        self.th.update_stat3_2.connect(self.Fault_3.setChecked)
 
         self.th.start()
         #self.thr.start()
