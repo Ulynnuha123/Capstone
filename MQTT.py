@@ -8,7 +8,6 @@ import numpy as np
 
 ADAFRUIT_IO_KEY = 'aio_ZWbI31fl9XVSloQe6WIX5paCVbTs'
 
-
 ADAFRUIT_IO_USERNAME = 'C_Project'
 
 aio = Client (ADAFRUIT_IO_USERNAME, ADAFRUIT_IO_KEY)
